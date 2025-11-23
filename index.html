@@ -1,0 +1,101 @@
+<!DOCTYPE html><html>
+<head>
+  <title>Digital Soundboard</title>
+</head>
+<body>
+  <table border="1" cellpadding="8" cellspacing="0" width="100%">
+    <tr><th colspan="3"><h1>Digital Soundboard</h1></th></tr>
+    <tr>
+      <td colspan="3" align="center">
+        <button id="addAudio">Add Audio</button>
+        <button id="deleteAll">Delete All</button>
+        <input type="file" id="fileInput" accept="audio/*" multiple style="display:none">
+      </td>
+    </tr>
+    <tr><th>Name</th><th>Player</th><th>Actions</th></tr>
+    <tbody id="audioTable"></tbody>
+  </table><script>
+  const addAudioBtn = document.getElementById('addAudio');
+  const deleteAllBtn = document.getElementById('deleteAll');
+  const fileInput = document.getElementById('fileInput');
+  const audioTable = document.getElementById('audioTable');
+
+  let audioData = JSON.parse(localStorage.getItem('soundboardData') || '[]');
+
+  function saveData() {
+    localStorage.setItem('soundboardData', JSON.stringify(audioData));
+  }
+
+  function renderTable() {
+    audioTable.innerHTML = '';
+    audioData.forEach((item, index) => {
+      const row = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = item.name;
+      row.appendChild(nameCell);
+
+      const playerCell = document.createElement('td');
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = item.data;
+      
+      playerCell.appendChild(audio);
+      row.appendChild(playerCell);
+
+      const actionsCell = document.createElement('td');
+
+      const renameBtn = document.createElement('button');
+      renameBtn.textContent = 'Rename';
+      renameBtn.onclick = () => {
+        const name = prompt('Rename:', item.name);
+        if (name && name.trim()) {
+          item.name = name.trim();
+          saveData();
+          renderTable();
+        }
+      };
+      actionsCell.appendChild(renameBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.style.color = 'blue';
+      delBtn.onclick = () => {
+        audioData.splice(index, 1);
+        saveData();
+        renderTable();
+      };
+      actionsCell.appendChild(delBtn);
+
+      row.appendChild(actionsCell);
+      audioTable.appendChild(row);
+    });
+  }
+
+  addAudioBtn.onclick = () => fileInput.click();
+
+  fileInput.onchange = async (e) => {
+    const files = Array.from(e.target.files);
+    for (const f of files) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        audioData.push({ name: f.name, data: ev.target.result });
+        saveData();
+        renderTable();
+      };
+      reader.readAsDataURL(f);
+    }
+    fileInput.value = '';
+  };
+
+  deleteAllBtn.onclick = () => {
+    if (confirm('Delete all?')) {
+      audioData = [];
+      saveData();
+      renderTable();
+    }
+  };
+
+  renderTable();
+</script></body>
+</html>
